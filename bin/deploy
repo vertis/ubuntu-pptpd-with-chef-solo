@@ -1,0 +1,49 @@
+#!/usr/bin/env ruby
+$:.unshift File.join(File.dirname(__FILE__), *%w[.. lib])
+
+require "rubygems" # ruby1.9 doesn't "require" it though
+require "bundler/setup"
+require 'net/ssh'
+require 'net/scp'
+require 'thor'
+
+class DeployCli < Thor
+  desc "configure HOST", "configure that server"
+  method_option :username, :required => false, :aliases => '-u', :default => 'root'
+  method_option :password, :type => :string, :required => false, :aliases => '-p'
+  method_option :bootstrap_file, :type => :string, :required => false, :aliases => '-b', :default => 'bootstrap/ubuntu-10.04-rvm.erb'
+  def configure(host)
+    Net::SSH.start(host, options[:username], :password => options[:password]) do |session|
+      puts session.exec! "mkdir -p /var/tmp/chef-solo && rm -rf /var/tmp/chef-solo/*"
+      session.scp.upload!('configs/default/solo.rb', '/var/tmp/chef-solo/solo.rb', :recursive => true)
+      session.scp.upload!('configs/default/node.json', '/var/tmp/chef-solo/node.json', :recursive => true)
+      session.scp.upload!('cookbooks', '/var/tmp/chef-solo/cookbooks', :recursive => true)
+      raise Exception.new("#{options[:bootstrap_file]} does not exist") unless File.exist?(options[:bootstrap_file])
+      session.scp.upload!(options[:bootstrap_file], '/var/tmp/bootstrap.sh', :recursive => true)
+
+      channel = session.open_channel do |ch|
+        ch.exec "chmod +x /var/tmp/bootstrap.sh && /var/tmp/bootstrap.sh" do |ch, success|
+          raise "could not execute command" unless success
+
+          # "on_data" is called when the process writes something to stdout
+          ch.on_data do |c, data|
+            $stdout.print "[#{host}] #{data}"
+          end
+
+          # "on_extended_data" is called when the process writes something to stderr
+          ch.on_extended_data do |c, type, data|
+            $stderr.print "[#{host}] #{data}"
+          end
+
+          ch.on_close { puts "[#{host}] command finished" }
+        end
+      end
+
+      channel.wait
+    end
+  end
+
+  private
+end
+
+DeployCli.start

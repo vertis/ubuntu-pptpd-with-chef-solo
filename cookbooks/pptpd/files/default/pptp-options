@@ -1,0 +1,24 @@
+name pptpd
+
+refuse-pap
+refuse-chap
+refuse-mschap
+
+require-mschap-v2
+
+require-mppe-128
+
+proxyarp
+
+nodefaultroute
+
+
+# Create a UUCP-style lock file for the pseudo-tty to ensure exclusive
+# access.
+lock
+
+# Disable BSD-Compress compression
+nobsdcomp
+
+ms-dns 208.67.222.222
+ms-dns 208.67.220.220
