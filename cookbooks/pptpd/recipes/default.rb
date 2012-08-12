@@ -2,7 +2,7 @@ package 'pptpd' do
   action :install
   options "--force-yes"
 end
-.
+
 directory '/etc/ppp/' do
   mode '755'
 end

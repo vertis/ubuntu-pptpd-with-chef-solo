@@ -11,7 +11,7 @@ class DeployCli < Thor
   desc "configure HOST", "configure that server"
   method_option :username, :required => false, :aliases => '-u', :default => 'root'
   method_option :password, :type => :string, :required => false, :aliases => '-p'
-  method_option :bootstrap_file, :type => :string, :required => false, :aliases => '-b', :default => 'bootstrap/ubuntu-10.04-rvm.erb'
+  method_option :bootstrap_file, :type => :string, :required => false, :aliases => '-b', :default => 'bootstrap/ubuntu-10.04-rbenv.erb'
   def configure(host)
     Net::SSH.start(host, options[:username], :password => options[:password]) do |session|
       puts session.exec! "mkdir -p /var/tmp/chef-solo && rm -rf /var/tmp/chef-solo/*"
