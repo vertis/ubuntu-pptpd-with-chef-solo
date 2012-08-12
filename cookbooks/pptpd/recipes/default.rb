@@ -20,6 +20,11 @@ end
 
 cookbook_file '/etc/rc.local' do
   source 'rc.local'
+  mode '0755'
+end
+
+execute "Enable masquerading instantly" do
+  command "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE"
 end
 
 execute "setup forwarding" do
